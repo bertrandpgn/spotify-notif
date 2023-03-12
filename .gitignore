@@ -1,0 +1,3 @@
+# Ignore fresh /tmp dir
+tmp/
+.env

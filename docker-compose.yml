@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  firestore:
+    image: firebase
+    command: emulators:start --only firestore
+    ports:
+      - "8080:8080"
+    volumes:
+      - firestore_data:/var/lib/firebase/emulators/firebase_firestore
+
+  # Uncomment to test app with docker
+  # app:
+  #   build: .
+  #   ports:
+  #     - "80:80"
+      
+volumes:
+  firestore_data:
