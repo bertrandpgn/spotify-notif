@@ -15,12 +15,10 @@ type ArtistSearchResult struct {
 }
 
 type AlbumSearchResult struct {
-	Albums struct {
-		Items []struct {
-			Name        string `json:"name"`
-			ReleaseDate string `json:"release_date"`
-		} `json:"items"`
-	} `json:"albums"`
+	Items []struct {
+		Name        string `json:"name"`
+		ReleaseDate string `json:"release_date"`
+	} `json:"items"`
 }
 
 func SpotifyGetAPI(path string) ([]byte, error) {

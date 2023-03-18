@@ -37,12 +37,12 @@ func getRoot(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func done(w http.ResponseWriter, r *http.Request) {
+func fetch(w http.ResponseWriter, r *http.Request) {
 	if src.AuthToken == "" {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
-		// http.Error(w, "Empty access token", http.StatusBadRequest)
+		log.Println("WARNING - Auth token empty redirect to /")
 	}
-	w.WriteHeader(http.StatusOK)
+
 	w.Header().Set("Content-Type", "text/plain")
 
 	resArtists, err := src.SpotifyGetAPI("/me/following?type=artist")
@@ -59,13 +59,16 @@ func done(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, v := range artists.Artists.Items {
-		resAlbums, err := src.SpotifyGetAPI("artists/" + v.ID + "/albums")
+
+		fmt.Fprintf(w, "[ARTIST] - %+v\n", v.Name)
+
+		// Spotify orders "albums" by release date but not when having both album & single in /albums so we need to make two different api calls
+		// List albums
+		resAlbums, err := src.SpotifyGetAPI("/artists/" + v.ID + "/albums?include_groups=album&limit=2")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-
-		fmt.Fprintf(w, "%+v\n", v.Name)
 
 		var albums src.AlbumSearchResult
 		err = json.Unmarshal(resAlbums, &albums)
@@ -74,7 +77,30 @@ func done(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		fmt.Fprint(w, albums.Albums.Items)
+		fmt.Fprint(w, "	[ALBUMS]\n")
+
+		for _, v := range albums.Items {
+			fmt.Fprintf(w, "	%+v : %+v\n", v.Name, v.ReleaseDate)
+		}
+
+		// List singles
+		resSingles, err := src.SpotifyGetAPI("/artists/" + v.ID + "/albums?include_groups=single&limit=2")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		var singles src.AlbumSearchResult
+		err = json.Unmarshal(resSingles, &singles)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprint(w, "	[SINGLES]\n")
+		for _, v := range singles.Items {
+			fmt.Fprintf(w, "	%+v : %+v\n", v.Name, v.ReleaseDate)
+		}
 	}
 }
 
@@ -86,7 +112,7 @@ func main() {
 	http.HandleFunc("/", getRoot)
 	http.HandleFunc("/healthz", src.GetHealthz)
 	http.HandleFunc("/oauth_callback", src.GetOAuthCallback)
-	http.HandleFunc("/done", done)
+	http.HandleFunc("/fetch", fetch)
 
 	log.Println("🚀 Starting server...")
 	log.Fatal(http.ListenAndServe(src.EnvVars.Host+":"+src.EnvVars.AppPort, nil))

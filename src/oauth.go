@@ -49,5 +49,5 @@ func GetOAuthCallback(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: store in database
 	AuthToken = token.AccessToken
-	http.Redirect(w, r, "/done", http.StatusSeeOther)
+	http.Redirect(w, r, "/fetch", http.StatusSeeOther)
 }
