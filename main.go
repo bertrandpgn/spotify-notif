@@ -18,9 +18,10 @@ func getRoot(w http.ResponseWriter, r *http.Request) {
 	config := src.GetOAuthConfig()
 	url := config.AuthCodeURL(src.RandomString(32), oauth2.AccessTypeOnline)
 
-	tmpl, err := template.ParseFiles(src.Envs["INDEX_FILE"])
+	tmpl, err := template.ParseFiles(src.EnvVars.IndexFile)
 	if err != nil {
-		panic(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	data := struct {
@@ -44,20 +45,37 @@ func done(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "text/plain")
 
-	res, err := src.SpotifyGetAPI("/me/following?type=artist")
+	resArtists, err := src.SpotifyGetAPI("/me/following?type=artist")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	var artistResponse src.ArtistResponse
-	err = json.Unmarshal(res, &artistResponse)
+	var artists src.ArtistSearchResult
+	err = json.Unmarshal(resArtists, &artists)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Fprintf(w, "%+v", artistResponse.Artists)
+	for _, v := range artists.Artists.Items {
+		resAlbums, err := src.SpotifyGetAPI("artists/" + v.ID + "/albums")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		fmt.Fprintf(w, "%+v\n", v.Name)
+
+		var albums src.AlbumSearchResult
+		err = json.Unmarshal(resAlbums, &albums)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		fmt.Fprint(w, albums.Albums.Items)
+	}
 }
 
 func main() {
@@ -71,5 +89,5 @@ func main() {
 	http.HandleFunc("/done", done)
 
 	log.Println("🚀 Starting server...")
-	log.Fatal(http.ListenAndServe(src.Envs["HOST"]+":"+src.Envs["APP_PORT"], nil))
+	log.Fatal(http.ListenAndServe(src.EnvVars.Host+":"+src.EnvVars.AppPort, nil))
 }
