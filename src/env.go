@@ -1,36 +1,61 @@
 package src
 
 import (
+	"log"
 	"os"
+	"reflect"
 
 	"github.com/joho/godotenv"
 )
 
-var Envs = map[string]string{
-	"APP_PORT":              "",
-	"CLIENT_ID":             "",
-	"CLIENT_SECRET":         "",
-	"ENV":                   "",
-	"HOST":                  "",
-	"INDEX_FILE":            "",
-	"OAUTH_REDIRECT_PATH":   "",
-	"SCHEME":                "",
-	"SPOTIFY_API_SCOPES":    "",
-	"SPOTIFY_API_AUTH_URL":  "",
-	"SPOTIFY_API_TOKEN_URL": "",
-	"SPOTIFY_API_URL":       "",
+type EnvVarsList struct {
+	AppPort            string
+	ClientID           string
+	ClientSecret       string
+	Env                string
+	Host               string
+	IndexFile          string
+	OAuthRedirectPath  string
+	Scheme             string
+	SpotifyAPIScopes   string
+	SpotifyAPIAuthURL  string
+	SpotifyAPITokenURL string
+	SpotifyAPIURL      string
 }
+
+var EnvVars EnvVarsList
 
 func DotEnv() {
 	err := godotenv.Load()
 	if err != nil {
-		panic("Error loading .env file")
+		log.Fatal("Error loading .env file")
 	}
 
-	for k := range Envs {
-		Envs[k] = os.Getenv(k)
-		if os.Getenv(k) == "" {
-			panic("Missing env var " + k)
+	EnvVars = EnvVarsList{
+		AppPort:            os.Getenv("APP_PORT"),
+		ClientID:           os.Getenv("CLIENT_ID"),
+		ClientSecret:       os.Getenv("CLIENT_SECRET"),
+		Env:                os.Getenv("ENV"),
+		Host:               os.Getenv("HOST"),
+		IndexFile:          os.Getenv("INDEX_FILE"),
+		OAuthRedirectPath:  os.Getenv("OAUTH_REDIRECT_PATH"),
+		Scheme:             os.Getenv("SCHEME"),
+		SpotifyAPIScopes:   os.Getenv("SPOTIFY_API_SCOPES"),
+		SpotifyAPIAuthURL:  os.Getenv("SPOTIFY_API_AUTH_URL"),
+		SpotifyAPITokenURL: os.Getenv("SPOTIFY_API_TOKEN_URL"),
+		SpotifyAPIURL:      os.Getenv("SPOTIFY_API_URL"),
+	}
+
+	// Loop through each field of the struct using reflection
+	val := reflect.ValueOf(EnvVars)
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+
+		// Check if the string value of the field is empty
+		if str, ok := field.Interface().(string); ok {
+			if str == "" {
+				log.Fatalf("%s is required but not set", val.Type().Field(i).Name)
+			}
 		}
 	}
 }

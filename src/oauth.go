@@ -11,14 +11,14 @@ var AuthToken string
 
 func GetOAuthConfig() *oauth2.Config {
 	config := &oauth2.Config{
-		ClientID:     Envs["CLIENT_ID"],
-		ClientSecret: Envs["CLIENT_SECRET"],
+		ClientID:     EnvVars.ClientID,
+		ClientSecret: EnvVars.ClientSecret,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  Envs["SPOTIFY_API_AUTH_URL"],
-			TokenURL: Envs["SPOTIFY_API_TOKEN_URL"],
+			AuthURL:  EnvVars.SpotifyAPIAuthURL,
+			TokenURL: EnvVars.SpotifyAPITokenURL,
 		},
-		RedirectURL: Envs["SCHEME"] + Envs["HOST"] + ":" + Envs["APP_PORT"] + Envs["OAUTH_REDIRECT_PATH"],
-		Scopes:      []string{Envs["SPOTIFY_API_SCOPES"]},
+		RedirectURL: EnvVars.Scheme + EnvVars.Host + ":" + EnvVars.AppPort + EnvVars.OAuthRedirectPath,
+		Scopes:      []string{EnvVars.SpotifyAPIScopes},
 	}
 	return config
 }

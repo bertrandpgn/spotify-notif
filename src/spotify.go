@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-type ArtistResponse struct {
+type ArtistSearchResult struct {
 	Artists struct {
 		Items []struct {
 			ID   string `json:"id"`
@@ -14,8 +14,17 @@ type ArtistResponse struct {
 	} `json:"artists"`
 }
 
+type AlbumSearchResult struct {
+	Albums struct {
+		Items []struct {
+			Name        string `json:"name"`
+			ReleaseDate string `json:"release_date"`
+		} `json:"items"`
+	} `json:"albums"`
+}
+
 func SpotifyGetAPI(path string) ([]byte, error) {
-	req, err := http.NewRequest("GET", Envs["SPOTIFY_API_URL"]+path, nil)
+	req, err := http.NewRequest("GET", EnvVars.SpotifyAPIURL+path, nil)
 	if err != nil {
 		return nil, err
 	}

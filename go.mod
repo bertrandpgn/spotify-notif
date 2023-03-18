@@ -1,6 +1,6 @@
 module github.com/bbr32/spotify-notif
 
-go 1.19
+go 1.20
 
 require golang.org/x/oauth2 v0.4.0
 
