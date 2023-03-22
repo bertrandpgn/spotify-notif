@@ -12,7 +12,9 @@ type EnvVarsList struct {
 	AppPort            string
 	ClientID           string
 	ClientSecret       string
+	EncryptionKey      string
 	Env                string
+	FirebaseProjectID  string
 	Host               string
 	IndexFile          string
 	OAuthRedirectPath  string
@@ -35,7 +37,9 @@ func DotEnv() {
 		AppPort:            os.Getenv("APP_PORT"),
 		ClientID:           os.Getenv("CLIENT_ID"),
 		ClientSecret:       os.Getenv("CLIENT_SECRET"),
+		EncryptionKey:      os.Getenv("ENCRYPTION_KEY"),
 		Env:                os.Getenv("ENV"),
+		FirebaseProjectID:  os.Getenv("FIREBASE_PROJECT_ID"),
 		Host:               os.Getenv("HOST"),
 		IndexFile:          os.Getenv("INDEX_FILE"),
 		OAuthRedirectPath:  os.Getenv("OAUTH_REDIRECT_PATH"),

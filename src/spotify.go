@@ -21,7 +21,12 @@ type AlbumSearchResult struct {
 	} `json:"items"`
 }
 
-func SpotifyGetAPI(path string) ([]byte, error) {
+type User struct {
+	DisplayName string `json:"display_name"`
+	ID          string `json:"id"`
+}
+
+func SpotifyGetAPI(path string, token string) ([]byte, error) {
 	req, err := http.NewRequest("GET", EnvVars.SpotifyAPIURL+path, nil)
 	if err != nil {
 		return nil, err
@@ -29,7 +34,7 @@ func SpotifyGetAPI(path string) ([]byte, error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	// Add an Authorization header with a bearer token
-	req.Header.Set("Authorization", "Bearer "+AuthToken)
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	// Make the request
 	client := &http.Client{}

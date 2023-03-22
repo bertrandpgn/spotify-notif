@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -20,6 +21,7 @@ func getRoot(w http.ResponseWriter, r *http.Request) {
 
 	tmpl, err := template.ParseFiles(src.EnvVars.IndexFile)
 	if err != nil {
+		log.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -32,21 +34,25 @@ func getRoot(w http.ResponseWriter, r *http.Request) {
 
 	err = tmpl.Execute(w, data)
 	if err != nil {
+		log.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
 func fetch(w http.ResponseWriter, r *http.Request) {
-	if src.AuthToken == "" {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		log.Println("WARNING - Auth token empty redirect to /")
+	token, err := src.CheckToken(r)
+	if err != nil {
+		log.Println("Error checking token: " + err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
 
-	resArtists, err := src.SpotifyGetAPI("/me/following?type=artist")
+	resArtists, err := src.SpotifyGetAPI("/me/following?type=artist", token)
 	if err != nil {
+		log.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -54,6 +60,7 @@ func fetch(w http.ResponseWriter, r *http.Request) {
 	var artists src.ArtistSearchResult
 	err = json.Unmarshal(resArtists, &artists)
 	if err != nil {
+		log.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -64,8 +71,9 @@ func fetch(w http.ResponseWriter, r *http.Request) {
 
 		// Spotify orders "albums" by release date but not when having both album & single in /albums so we need to make two different api calls
 		// List albums
-		resAlbums, err := src.SpotifyGetAPI("/artists/" + v.ID + "/albums?include_groups=album&limit=2")
+		resAlbums, err := src.SpotifyGetAPI("/artists/"+v.ID+"/albums?include_groups=album&limit=2", token)
 		if err != nil {
+			log.Println(err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -84,8 +92,9 @@ func fetch(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// List singles
-		resSingles, err := src.SpotifyGetAPI("/artists/" + v.ID + "/albums?include_groups=single&limit=2")
+		resSingles, err := src.SpotifyGetAPI("/artists/"+v.ID+"/albums?include_groups=single&limit=2", token)
 		if err != nil {
+			log.Println(err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -93,6 +102,7 @@ func fetch(w http.ResponseWriter, r *http.Request) {
 		var singles src.AlbumSearchResult
 		err = json.Unmarshal(resSingles, &singles)
 		if err != nil {
+			log.Println(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -107,6 +117,8 @@ func fetch(w http.ResponseWriter, r *http.Request) {
 func main() {
 	// Load variables from .env file
 	src.DotEnv()
+	ctx := context.Background()
+	src.CreateClient(ctx)
 
 	// Load routes
 	http.HandleFunc("/", getRoot)
